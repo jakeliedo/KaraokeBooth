@@ -9,6 +9,9 @@ set -eu
 xset s off -dpms
 xset s noblank
 
+# Cho phép karaoke user (chạy service) kết nối X display này
+xhost +local:karaoke
+
 # Nhận diện màn theo EDID chứ không theo tên output — tên (HDMI-1/DP-2) đổi giữa
 # các lần cắm. Ánh xạ được lưu lúc lắp đặt tại /persist/config/displays.json.
 . /usr/lib/karaoke/detect-displays.sh   # xuất TOUCH_OUT, TV_OUT, TOUCH_DEV
