@@ -63,9 +63,13 @@ class MpvClient:
             "--ontop", "--no-osc", "--osd-level=0",
             "--no-input-default-bindings", "--input-vo-keyboard=no",
             "--cursor-autohide=always",
-            "--vo=gpu", "--gpu-context=x11egl", "--hwdec=auto-safe",
+            "--vo=gpu", "--hwdec=auto-safe",
             "--video-sync=display-resample",
-            f"--audio-device={c.audio_device}",
+            *(
+                [f"--audio-device={c.audio_device}"]
+                if getattr(c, "audio_device", "") not in ("", "auto")
+                else []
+            ),
             f"--volume={c.volume}", f"--volume-max={c.volume_max}",
             "--audio-pitch-correction=yes",
             "--sub-auto=no",
