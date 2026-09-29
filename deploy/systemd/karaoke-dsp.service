@@ -1,0 +1,21 @@
+# ~/.config/systemd/user/karaoke-dsp.service
+#
+# Chuỗi filter-chain chạy TIẾN TRÌNH RIÊNG. Plugin crash hay gặp denormal thì chỉ
+# tiến trình này chết và sống lại sau 1 giây; PipeWire server và các app khác
+# không bị ảnh hưởng. Nạp thẳng vào daemon là mất toàn bộ tiếng.
+
+[Unit]
+Description=KaraokeBooth DSP chain
+After=wireplumber.service
+Requires=pipewire.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pipewire -c /etc/karaoke/dsp.conf
+Restart=always
+RestartSec=1
+StartLimitIntervalSec=0
+Nice=-10
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,46 @@
+[project]
+name = "karaoke-core"
+version = "0.1.0"
+description = "Service lõi cho hệ thống karaoke — thư viện, hàng chờ, phát nhạc, mixer"
+requires-python = ">=3.11"
+# Chỉ đặt cận dưới ở đây; phiên bản chính xác đang chạy trên máy thật được
+# đóng băng vào requirements.lock.txt bằng `pip freeze` sau mỗi lần triển khai.
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "pydantic>=2.9",
+    "yt-dlp>=2024.12.13",
+    "qrcode[pil]>=8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "httpx>=0.28",
+    "ruff>=0.8",
+]
+
+[project.scripts]
+karaoke-core = "karaoke_core.main:run"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["karaoke_core*"]
+
+[tool.setuptools.package-data]
+karaoke_core = ["db/*.sql", "db/migrations/*.sql"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

@@ -1,0 +1,28 @@
+# ~/.config/systemd/user/karaoke-core.service  (user karaoke, cần enable-linger)
+#
+# Chạy ở user service chứ không phải system service: nó cần khởi chạy mpv trong
+# phiên X. Với `loginctl enable-linger karaoke` thì nó vẫn lên ngay từ lúc boot,
+# trước cả khi X sẵn sàng — và nếu X chưa lên thì core vẫn phục vụ API cho điện
+# thoại rồi tự bắt lấy mpv khi màn hình sẵn sàng (Session._retry_mpv).
+
+[Unit]
+Description=KaraokeBooth core service
+After=network-online.target data.mount
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+Environment=KARAOKE_CONFIG=/etc/karaoke/config.toml
+Environment=KARAOKE_WEB_ROOT=/opt/karaoke/web
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/karaoke/venv/bin/karaoke-core
+Restart=always
+RestartSec=2
+# KHÔNG để mặc định StartLimitBurst=5: sau 5 lần crash systemd sẽ BỎ CUỘC và máy
+# chết hẳn giữa buổi hát. Đây là bẫy hay gặp nhất khi làm thiết bị chạy 24/7.
+StartLimitIntervalSec=0
+WatchdogSec=30
+
+[Install]
+WantedBy=default.target

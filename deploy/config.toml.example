@@ -1,0 +1,41 @@
+# Chép sang /etc/karaoke/config.toml rồi sửa theo máy thật.
+# Mọi giá trị đều có mặc định trong core/karaoke_core/config.py — file này chỉ
+# ghi đè những gì khác máy phát triển.
+
+data_dir = "/data"
+
+[player]
+# Chỉ số màn hình X11 của TV. Xác định bằng `xrandr --listmonitors` sau khi chạy
+# session.sh: 0 = màn cảm ứng, 1 = TV.
+screen = 1
+# GHIM TƯỜNG MINH. Lấy tên thật bằng:
+#   pw-dump | jq -r '.[] | select(.info.props."media.class"=="Audio/Sink") | .info.props."node.name"'
+# Tuyệt đối không để mpv tự chọn — nó sẽ chọn HDMI và tiếng ra loa TV.
+audio_device = "pipewire/karaoke_music"
+volume = 100
+# Giới hạn ±4 nửa cung cho bài video. Pitch-shift cả bản mix luôn có artifact.
+video_pitch_range = 4
+
+[youtube]
+enabled = true
+search_limit = 20
+search_suffix = "karaoke"
+min_duration = 60
+max_duration = 900
+prefetch = true
+# Dọn cache theo LRU khi ổ dữ liệu còn trống ít hơn ngưỡng này (%)
+keep_free_percent = 15
+
+[network]
+host = "127.0.0.1"   # nginx reverse proxy ra 0.0.0.0:80
+port = 8080
+ap_address = "192.168.50.1"
+ap_hostname = "karaoke.box"
+
+[audio]
+music_sink = "karaoke_music"
+master_node = "karaoke_bus"
+# false = Mức A: mic xử lý trên MG10XU, máy chỉ lo phần nhạc.
+# true  = Mức B: mic đi qua audio interface vào máy, DSP đầy đủ.
+# Xem docs/WIRING.md — chỉ đổi sau khi đã đo ở Giai đoạn 0.
+mic_through_pc = false

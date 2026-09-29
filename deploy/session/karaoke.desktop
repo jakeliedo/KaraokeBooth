@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Karaoke
+Comment=Phiên kiosk của KaraokeBooth
+Exec=/usr/lib/karaoke/session.sh
+Type=Application

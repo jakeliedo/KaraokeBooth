@@ -1,0 +1,8 @@
+[Unit]
+Description=Sao lưu cơ sở dữ liệu thư viện
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/karaoke/backup-db.sh
+Nice=15
+IOSchedulingClass=idle

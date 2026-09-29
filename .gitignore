@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Node / PWA
+node_modules/
+web/dist/
+.vite/
+
+# Dữ liệu runtime — không bao giờ commit
+*.db
+*.db-wal
+*.db-shm
+/data/
+*.raw
+*.qcow2
+*.img
+*.bmap
+
+# Media
+*.mp4
+*.mkv
+*.webm
+*.sf2
+*.mid
+*.kar
+
+# Cấu hình có bí mật (PSK wifi, serial máy)
+deploy/network/hostapd.local.conf
+/persist/
+
+# Hệ điều hành / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
