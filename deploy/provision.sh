@@ -34,10 +34,13 @@ apt-get install -y --no-install-recommends \
     unclutter xinput x11-xserver-utils \
     pipewire pipewire-audio pipewire-alsa pipewire-pulse pipewire-jack \
     wireplumber pipewire-bin libspa-0.2-modules alsa-utils \
-    firmware-misc-nonfree intel-media-va-driver-non-free \
     mpv ffmpeg fonts-noto-core \
     python3 python3-venv python3-systemd sqlite3 \
     nginx-light chrony jq curl git rsync bmap-tools
+
+# Firmware tùy chọn — không phải distro nào cũng có, bỏ qua nếu thiếu
+apt-get install -y --no-install-recommends firmware-misc-nonfree \
+    intel-media-va-driver-non-free va-driver-all 2>/dev/null || true
 
 if [ "$WITH_AP" -eq 1 ]; then
     apt-get install -y --no-install-recommends hostapd dnsmasq iw wireless-regdb
