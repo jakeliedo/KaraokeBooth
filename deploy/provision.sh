@@ -36,7 +36,9 @@ apt-get install -y --no-install-recommends \
     wireplumber pipewire-bin libspa-0.2-modules alsa-utils \
     mpv ffmpeg fonts-noto-core \
     python3 python3-venv python3-systemd sqlite3 \
-    nginx-light chrony jq curl git rsync bmap-tools
+    nginx-light chrony jq curl git rsync bmap-tools \
+    pulseaudio-utils \
+    mesa-va-drivers mesa-vdpau-drivers
 
 # Firmware tùy chọn — không phải distro nào cũng có, bỏ qua nếu thiếu
 apt-get install -y --no-install-recommends firmware-misc-nonfree \
@@ -88,6 +90,7 @@ chown -R "$USER_NAME:$USER_NAME" "$PREFIX"
 log "Đặt file cấu hình"
 [ -f /etc/karaoke/config.toml ] || cp "$REPO/deploy/config.toml.example" /etc/karaoke/config.toml
 cp "$REPO/deploy/pipewire/dsp.conf" /etc/karaoke/dsp.conf
+install -m755 "$REPO/deploy/fix_alsa.sh" /etc/karaoke/fix_alsa.sh
 
 install -d /etc/pipewire/pipewire.conf.d /etc/wireplumber/wireplumber.conf.d
 cp "$REPO/deploy/pipewire/10-karaoke-clock.conf" /etc/pipewire/pipewire.conf.d/

@@ -17,11 +17,15 @@ Environment=KARAOKE_CONFIG=/etc/karaoke/config.toml
 Environment=KARAOKE_WEB_ROOT=/opt/karaoke/web
 Environment=PYTHONUNBUFFERED=1
 ExecStart=/opt/karaoke/venv/bin/karaoke-core
+# Chạy fix_alsa.sh ở background (không chặn stop phase)
+ExecStartPost=/bin/bash -c "/etc/karaoke/fix_alsa.sh &"
 Restart=always
 RestartSec=2
 # KHÔNG để mặc định StartLimitBurst=5: sau 5 lần crash systemd sẽ BỎ CUỘC và máy
 # chết hẳn giữa buổi hát. Đây là bẫy hay gặp nhất khi làm thiết bị chạy 24/7.
 StartLimitIntervalSec=0
+# Force-kill sau 10s nếu service không dừng được (tránh treo 90s+)
+TimeoutStopSec=10
 
 [Install]
 WantedBy=default.target
