@@ -51,6 +51,13 @@ class Session:
             # Không được coi đây là lỗi chết người: core vẫn phục vụ API và app điện
             # thoại, rồi tự bắt được mpv khi màn hình sẵn sàng.
             self._mpv_retry = asyncio.create_task(self._retry_mpv())
+        else:
+            await self._show_idle()
+
+    async def _show_idle(self) -> None:
+        if self.mpv.available and self._idle_image.exists():
+            with __import__("contextlib").suppress(Exception):
+                await self.mpv.loadfile(str(self._idle_image))
 
     async def _retry_mpv(self, interval: float = 5.0) -> None:
         while not self.mpv.available:
@@ -58,6 +65,7 @@ class Session:
             if await self.mpv.start():
                 log.info("mpv da san sang sau %ss cho", interval)
                 self._bus.emit("player_ready", self.snapshot())
+                await self._show_idle()
                 return
 
     async def close(self) -> None:
