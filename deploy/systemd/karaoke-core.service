@@ -22,7 +22,6 @@ RestartSec=2
 # KHÔNG để mặc định StartLimitBurst=5: sau 5 lần crash systemd sẽ BỎ CUỘC và máy
 # chết hẳn giữa buổi hát. Đây là bẫy hay gặp nhất khi làm thiết bị chạy 24/7.
 StartLimitIntervalSec=0
-WatchdogSec=30
 
 [Install]
 WantedBy=default.target
