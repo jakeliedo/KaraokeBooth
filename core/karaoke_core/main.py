@@ -63,11 +63,11 @@ def create_app(cfg=None) -> FastAPI:
     # PWA cho điện thoại. Trên máy thật nginx phục vụ tĩnh cho nhanh; ở đây phục
     # vụ trực tiếp để chạy được ngay trong máy ảo mà không cần dựng nginx.
     if WEB_ROOT.is_dir():
-        app.mount("/app", StaticFiles(directory=WEB_ROOT, html=True), name="web")
-
         @app.get("/")
         async def _index():
             return FileResponse(WEB_ROOT / "index.html")
+
+        app.mount("/", StaticFiles(directory=WEB_ROOT), name="web")
 
     return app
 
