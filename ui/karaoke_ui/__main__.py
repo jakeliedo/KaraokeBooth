@@ -37,6 +37,7 @@ class Backend(QObject):
     stateChanged = Signal()
     connectionChanged = Signal()
     searchResults = Signal(list, str)
+    ytdlpUpdateDone = Signal(bool, str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -104,6 +105,33 @@ class Backend(QObject):
     def setPitch(self, semitones: int) -> None:
         self._post_async("/api/mixer/pitch", {"semitones": semitones})
 
+    @Slot(float)
+    def setTempo(self, ratio: float) -> None:
+        self._post_async("/api/mixer/tempo", {"ratio": ratio})
+
+    @Slot()
+    def swapDisplays(self) -> None:
+        """Hoán đổi vai trò hai màn hình — gọi script detect-displays."""
+        import subprocess
+        threading.Thread(
+            target=lambda: subprocess.run(
+                ["/opt/karaoke/deploy/session/detect-displays.sh", "--swap"],
+                check=False,
+            ),
+            daemon=True,
+        ).start()
+
+    @Slot()
+    def updateYtdlp(self) -> None:
+        def work() -> None:
+            try:
+                data = self._post_sync("/api/admin/ytdlp/update", {})
+                self.ytdlpUpdateDone.emit(data.get("ok", False), data.get("detail", ""))
+            except OSError as exc:
+                self.ytdlpUpdateDone.emit(False, f"Lỗi kết nối: {exc}")
+
+        threading.Thread(target=work, daemon=True).start()
+
     # ---------------------------------------------------------------- HTTP
 
     def _get(self, path: str) -> dict:
@@ -112,6 +140,16 @@ class Backend(QObject):
 
     def _post_async(self, path: str, body: dict) -> None:
         self._request_async("POST", path, body)
+
+    def _post_sync(self, path: str, body: dict) -> dict:
+        """POST đồng bộ — chỉ gọi từ thread nền, không bao giờ từ Qt thread."""
+        data = json.dumps(body).encode()
+        req = urllib.request.Request(
+            API + path, data=data, method="POST",
+            headers={"content-type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            return json.loads(resp.read())
 
     def _request_async(self, method: str, path: str, body: dict | None = None) -> None:
         def work() -> None:

@@ -58,6 +58,10 @@ class NetworkConfig:
     port: int = 8080
     ap_address: str = "192.168.50.1"
     ap_hostname: str = "karaoke.box"
+    ap_ssid: str = "KaraokeBox"
+    """SSID WiFi AP phát cho khách. Dùng trong QR WIFI và màn idle."""
+    ap_psk: str = ""
+    """Mật khẩu WiFi. Để trống = mạng mở (không khuyến nghị trong quán)."""
 
 
 @dataclass(slots=True)

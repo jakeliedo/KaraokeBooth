@@ -20,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import config as config_module
 from .api.routes import router
+from .api.routes_admin import router as admin_router
 from .bus import EventBus
 from .db import connect, migrate
 from .session import Session
@@ -52,6 +53,7 @@ def create_app(cfg=None) -> FastAPI:
     app = FastAPI(title="KaraokeBooth", version="0.1.0", docs_url="/api/docs",
                   lifespan=lifespan)
     app.include_router(router)
+    app.include_router(admin_router)
 
     app.state.cfg = cfg
     app.state.db = conn

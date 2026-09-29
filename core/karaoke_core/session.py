@@ -14,6 +14,7 @@ from .bus import EventBus
 from .models import PlayerState, QueueItem, SongRef, SourceKind
 from .playback.mpv_client import MpvClient
 from .playback.video_backend import VideoBackend
+from .qr_util import write_idle_image
 from .sources import LocalSource, SourceError, YouTubeSource
 
 log = logging.getLogger(__name__)
@@ -28,6 +29,12 @@ class Session:
         self._current: QueueItem | None = None
         self._advancing = False
         self._mpv_retry: asyncio.Task | None = None
+
+        # Ảnh hiển thị trên TV khi không có bài phát.
+        # Ghi vào /run/karaoke/ (tmpfs) để mpv đọc được qua đường dẫn file.
+        from pathlib import Path
+        self._idle_image = Path("/run/karaoke/idle.png")
+        write_idle_image(cfg, self._idle_image)
 
         self.local = LocalSource(conn)
         self.youtube = YouTubeSource(conn, cfg.cache_dir, cfg.youtube)
@@ -160,6 +167,12 @@ class Session:
 
             self._current = None
             await self.player.stop()
+            # Hàng chờ hết: hiện ảnh QR trên TV thay vì màn đen.
+            if self.mpv.available and self._idle_image.exists():
+                try:
+                    await self.mpv.loadfile(str(self._idle_image))
+                except Exception as exc:
+                    log.debug("khong load duoc idle image: %s", exc)
             return False
         finally:
             self._advancing = False
