@@ -32,9 +32,12 @@ fi
 sed -i "s/^screen = .*/screen = ${KARAOKE_SCREEN}/" /etc/karaoke/config.toml 2>/dev/null || true
 
 # BẮT BUỘC và phải chạy SAU mỗi lần xrandr. Nếu quên, vùng chạm trải trên toàn bộ
-# desktop ảo 3840x1080 và mọi cú chạm lệch đúng một nửa màn hình.
+# desktop ảo và mọi cú chạm lệch. Map tất cả device khớp tên (có thể có 2 node
+# cho cùng một màn cảm ứng, ví dụ Atmel maXTouch xuất hiện 2 lần trong xinput).
 if [ -n "${TOUCH_DEV:-}" ]; then
-    xinput map-to-output "$TOUCH_DEV" "$TOUCH_OUT" || true
+    xinput list --name-only 2>/dev/null | grep -F "$TOUCH_DEV" | while IFS= read -r dev; do
+        xinput map-to-output "$dev" "$TOUCH_OUT" || true
+    done
 fi
 
 openbox &
