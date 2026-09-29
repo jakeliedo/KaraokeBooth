@@ -65,7 +65,8 @@ class MpvClient:
             "--no-input-default-bindings", "--input-vo-keyboard=no",
             "--cursor-autohide=always",
             "--vo=gpu", "--hwdec=auto-safe",
-            "--video-sync=display-resample",
+            "--video-sync=audio",
+            "--scale=bilinear", "--dscale=bilinear",
             *(
                 [f"--audio-device={c.audio_device}"]
                 if getattr(c, "audio_device", "") not in ("", "auto")
