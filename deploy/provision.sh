@@ -22,13 +22,19 @@ log() { printf '\n\033[1;36m==> %s\033[0m\n' "$1"; }
 # ---------------------------------------------------------------- gói
 log "Cài gói"
 export DEBIAN_FRONTEND=noninteractive
+
+# Bật non-free-firmware nếu chưa có (cần cho firmware Intel/AMD)
+if ! grep -q 'non-free-firmware' /etc/apt/sources.list 2>/dev/null; then
+    sed -i 's/main$/main contrib non-free non-free-firmware/' /etc/apt/sources.list
+fi
+
 apt-get update -qq
 apt-get install -y --no-install-recommends \
     xserver-xorg-core xserver-xorg-input-libinput xinit openbox lightdm \
     unclutter xinput x11-xserver-utils \
-    firmware-misc-nonfree intel-media-va-driver-non-free \
     pipewire pipewire-audio pipewire-alsa pipewire-pulse pipewire-jack \
     wireplumber pipewire-bin libspa-0.2-modules alsa-utils \
+    firmware-misc-nonfree intel-media-va-driver-non-free \
     mpv ffmpeg fonts-noto-core \
     python3 python3-venv python3-systemd sqlite3 \
     nginx-light chrony jq curl git rsync bmap-tools
