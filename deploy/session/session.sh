@@ -32,16 +32,26 @@ fi
 sed -i "s/^screen = .*/screen = ${KARAOKE_SCREEN}/" /etc/karaoke/config.toml 2>/dev/null || true
 
 # BẮT BUỘC và phải chạy SAU mỗi lần xrandr. Nếu quên, vùng chạm trải trên toàn bộ
-# desktop ảo và mọi cú chạm lệch. Map tất cả device khớp tên (có thể có 2 node
-# cho cùng một màn cảm ứng, ví dụ Atmel maXTouch xuất hiện 2 lần trong xinput).
+# desktop ảo và mọi cú chạm lệch. Dùng device ID (không phải tên) vì khi có nhiều
+# node cùng tên, xinput map-to-output theo tên sẽ thất bại với lỗi "ambiguous".
+# Chờ 2s để kernel hoàn tất đăng ký thiết bị cảm ứng trước khi map.
 if [ -n "${TOUCH_DEV:-}" ]; then
-    xinput list --name-only 2>/dev/null | grep -F "$TOUCH_DEV" | while IFS= read -r dev; do
-        xinput map-to-output "$dev" "$TOUCH_OUT" || true
+    sleep 2
+    xinput list 2>/dev/null | grep -F "$TOUCH_DEV" | while IFS= read -r line; do
+        dev_id=$(echo "$line" | grep -oE 'id=[0-9]+' | grep -oE '[0-9]+' | head -1)
+        [ -n "$dev_id" ] && xinput map-to-output "$dev_id" "$TOUCH_OUT" || true
     done
 fi
 
 openbox &
 unclutter -idle 0.5 -root &
+
+# Tắt IBus/IME để không hiện popup "tiếng Việt - tiếng Anh" khi chạm ô nhập liệu.
+# Kiosk dùng bàn phím ảo riêng, không cần input method nào của hệ thống.
+export GTK_IM_MODULE=''
+export QT_IM_MODULE='none'
+export XMODIFIERS='@im=none'
+pkill ibus 2>/dev/null || true
 
 # Kiosk Chromium trên màn cảm ứng (TOUCH_OUT, luôn ở vị trí x=0)
 # --app= bỏ thanh địa chỉ; --kiosk fullscreen trên màn hiện tại của cửa sổ;
@@ -56,7 +66,7 @@ chromium \
     --noerrdialogs \
     --disable-session-crashed-bubble \
     --disable-infobars \
-    --disable-features=TranslateUI \
+    --disable-features=TranslateUI,VirtualKeyboardAPI \
     --window-position=0,0 &
 
 wait

@@ -183,10 +183,13 @@ body {
 .song-list .item .title {
   font-size: 16px;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: var(--text);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  line-height: 1.35;
 }
 
 .song-list .item .meta {
@@ -223,29 +226,41 @@ body {
 
 .now-playing {
   display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 20px 24px 16px;
+  flex-direction: column;
   border-bottom: 1px solid var(--surface-2);
-  min-height: 140px;
 }
 
-.np-art {
-  width: 96px;
-  height: 96px;
-  border-radius: 10px;
+/* ── Preview video / thumbnail lớn ── */
+.np-preview-wrap {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background: #000;
   overflow: hidden;
   flex-shrink: 0;
-  background: var(--surface-2);
 }
 
-.np-art img, .np-art svg {
+#np-preview {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  display: block;
 }
 
-.np-info { flex: 1; min-width: 0; }
+#np-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Ẩn placeholder khi preview đang hiển thị */
+#np-preview[src]:not([src=""]) ~ #np-placeholder { display: none; }
+
+.np-info {
+  padding: 12px 20px 14px;
+  min-width: 0;
+}
 
 .np-title {
   font-size: 20px;

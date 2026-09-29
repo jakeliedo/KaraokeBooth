@@ -9,9 +9,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 
 from fastapi import APIRouter, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
+
+_PREVIEW_PATH = "/tmp/karaoke-preview.jpg"
 
 from ..models import SongRef, SourceKind
 
@@ -172,6 +176,19 @@ async def replay(request: Request):
 async def seek(request: Request, body: SeekBody):
     await _session(request).player.seek(body.seconds, body.mode)
     return {"ok": True}
+
+
+@router.get("/player/preview")
+async def player_preview(request: Request):
+    """Chụp frame hiện tại từ mpv và trả về JPEG. Client poll mỗi 3s."""
+    ok = await _session(request).mpv.screenshot(_PREVIEW_PATH)
+    if ok and os.path.exists(_PREVIEW_PATH):
+        return FileResponse(
+            _PREVIEW_PATH,
+            media_type="image/jpeg",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
+    return Response(status_code=204)
 
 
 # ---------------------------------------------------------------- mixer (nhạc)

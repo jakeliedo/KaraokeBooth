@@ -16,6 +16,7 @@ let pendingSong = null;
 // volume/pitch local mirror — luôn sync từ server state
 let _volume = 100;
 let _pitch = 0;
+let _previewTimer = null;
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -140,37 +141,52 @@ function syncLocalState() {
 function renderNowPlaying() {
   const p = state.player || {};
   const song = p.song || state.now_playing?.song;
+  const preview = $('np-preview');
 
   if (song) {
     $('np-title').textContent = song.title || '—';
     const singer = p.song?.singer || state.now_playing?.singer;
     $('np-singer').textContent = singer ? `🎤 ${singer}` : '';
-    const art = $('np-art');
-    if (song.thumbnail) {
-      art.innerHTML = `<img src="${escHtml(song.thumbnail)}" alt="" onerror="this.style.display='none'">`;
-    } else {
-      art.innerHTML = defaultArtSvg();
+    // thumbnail làm fallback khi chưa có preview từ mpv
+    if (preview && !preview._live) {
+      preview.src = song.thumbnail || '';
     }
   } else {
     $('np-title').textContent = 'Chưa có bài';
     $('np-singer').textContent = '';
-    $('np-art').innerHTML = defaultArtSvg();
+    if (preview) { preview.src = ''; preview._live = false; }
   }
 
   const playing = p.state === 'playing';
   $('btn-toggle').textContent = playing ? '⏸' : '▶';
+
+  if (playing) _startPreview();
+  else _stopPreview();
 
   updateProgress(p.position || 0, p.duration || 0);
   $('vol-val').textContent = _volume;
   $('pitch-val').textContent = _pitch >= 0 ? `+${_pitch}` : String(_pitch);
 }
 
-function defaultArtSvg() {
-  return `<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="40" cy="40" r="38" stroke="#333" stroke-width="2"/>
-    <circle cx="40" cy="40" r="14" fill="#222"/>
-    <path d="M34 31l18 9-18 9V31z" fill="#555"/>
-  </svg>`;
+function _fetchPreview() {
+  const img = $('np-preview');
+  if (!img) return;
+  const url = `/api/player/preview?t=${Date.now()}`;
+  const tmp = new Image();
+  tmp.onload = () => { img.src = url; img._live = true; };
+  tmp.onerror = () => { img._live = false; };
+  tmp.src = url;
+}
+
+function _startPreview() {
+  if (_previewTimer) return;
+  _fetchPreview();
+  _previewTimer = setInterval(_fetchPreview, 3000);
+}
+
+function _stopPreview() {
+  clearInterval(_previewTimer);
+  _previewTimer = null;
 }
 
 function updateProgress(pos, dur) {

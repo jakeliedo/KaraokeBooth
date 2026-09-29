@@ -162,6 +162,15 @@ class MpvClient:
     async def loadfile(self, path: str) -> None:
         await self.command("loadfile", path, "replace")
 
+    async def screenshot(self, path: str = "/tmp/karaoke-preview.jpg") -> bool:
+        if not self._available:
+            return False
+        try:
+            await self.command("screenshot-to-file", path, "video")
+            return True
+        except Exception:
+            return False
+
     async def _read_loop(self) -> None:
         assert self._reader
         while True:
