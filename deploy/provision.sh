@@ -60,8 +60,12 @@ loginctl enable-linger "$USER_NAME"
 log "Tạo thư mục dữ liệu"
 install -d -o "$USER_NAME" -g "$USER_NAME" \
     /data/db /data/db/backup /data/media /data/cache /data/config /data/log \
-    /persist/config /persist/backup /run/karaoke
+    /persist/config /persist/backup
 install -d /etc/karaoke /usr/lib/karaoke
+
+# /run/karaoke là tmpfs — mất sau mỗi reboot. Dùng tmpfiles.d để tự tạo lại.
+echo "d /run/karaoke 0755 $USER_NAME $USER_NAME -" > /etc/tmpfiles.d/karaoke.conf
+systemd-tmpfiles --create /etc/tmpfiles.d/karaoke.conf
 
 # ---------------------------------------------------------------- mã nguồn
 log "Cài ứng dụng vào $PREFIX"
