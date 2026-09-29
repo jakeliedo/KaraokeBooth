@@ -131,7 +131,7 @@ function applyEvent(event, data) {
 // Sync _volume/_pitch từ server state sau mỗi snapshot/player event
 function syncLocalState() {
   const p = state.player;
-  if (p.volume !== undefined) _volume = p.volume;
+  if (p.volume !== undefined) _volume = Math.min(100, p.volume);
   if (p.pitch !== undefined) _pitch = p.pitch;
 }
 
@@ -316,7 +316,7 @@ async function enqueue(song, singer) {
 // ─── CONTROLS ────────────────────────────────────────────────────────────────
 
 async function adjustVolume(delta) {
-  _volume = Math.max(0, Math.min(130, _volume + delta));
+  _volume = Math.max(0, Math.min(100, _volume + delta));
   $('vol-val').textContent = _volume;
   api('POST', '/api/mixer/volume', { volume: _volume }).catch(console.error);
 }
@@ -328,6 +328,94 @@ async function adjustPitch(delta) {
   _pitch = Math.max(lo, Math.min(hi, _pitch + delta));
   $('pitch-val').textContent = _pitch >= 0 ? `+${_pitch}` : String(_pitch);
   api('POST', '/api/mixer/pitch', { semitones: _pitch }).catch(console.error);
+}
+
+// ─── VIRTUAL KEYBOARD ────────────────────────────────────────────────────────
+
+const VKB_ROWS = [
+  ['1','2','3','4','5','6','7','8','9','0','⌫'],
+  ['Q','W','E','R','T','Y','U','I','O','P'],
+  ['A','S','D','F','G','H','J','K','L'],
+  ['Z','X','C','V','B','N','M',' ','↵','✕'],
+];
+
+let kbTarget = null;
+
+function _buildVkb() {
+  const kb = document.createElement('div');
+  kb.id = 'vkb';
+  // prevent buttons from stealing focus away from the active input
+  kb.addEventListener('pointerdown', e => e.preventDefault());
+
+  for (const row of VKB_ROWS) {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'vkb-row';
+    for (const key of row) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'vkb-key';
+      if (key === '⌫')  { btn.classList.add('vkb-bs');    btn.textContent = '⌫'; }
+      else if (key===' '){ btn.classList.add('vkb-space'); btn.textContent = 'Dấu cách'; }
+      else if (key==='↵'){ btn.classList.add('vkb-enter'); btn.textContent = '↵'; }
+      else if (key==='✕'){ btn.classList.add('vkb-close'); btn.textContent = '✕'; }
+      else btn.textContent = key;
+      btn.addEventListener('click', () => vkbKey(key));
+      rowEl.appendChild(btn);
+    }
+    kb.appendChild(rowEl);
+  }
+  document.body.appendChild(kb);
+  return kb;
+}
+
+function vkbKey(key) {
+  if (key === '✕') { vkbHide(); return; }
+  if (!kbTarget) return;
+
+  if (key === '⌫') {
+    const s = kbTarget.selectionStart ?? kbTarget.value.length;
+    const e = kbTarget.selectionEnd   ?? s;
+    const v = kbTarget.value;
+    if (s !== e) {
+      kbTarget.value = v.slice(0, s) + v.slice(e);
+      kbTarget.setSelectionRange(s, s);
+    } else if (s > 0) {
+      kbTarget.value = v.slice(0, s - 1) + v.slice(s);
+      kbTarget.setSelectionRange(s - 1, s - 1);
+    }
+    kbTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    return;
+  }
+
+  if (key === '↵') {
+    if (kbTarget.id === 'q') {
+      clearTimeout(searchTimer);
+      doSearch(kbTarget.value);
+    } else if (kbTarget.id === 'singer-input') {
+      $('singer-dialog').close('ok');
+    }
+    vkbHide();
+    return;
+  }
+
+  const ch = key === ' ' ? ' ' : key;
+  const s = kbTarget.selectionStart ?? kbTarget.value.length;
+  const e = kbTarget.selectionEnd   ?? s;
+  kbTarget.value = kbTarget.value.slice(0, s) + ch + kbTarget.value.slice(e);
+  kbTarget.setSelectionRange(s + 1, s + 1);
+  kbTarget.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function vkbShow(el) {
+  kbTarget = el;
+  (document.getElementById('vkb') || _buildVkb()).classList.add('visible');
+  document.body.classList.add('kb-open');
+}
+
+function vkbHide() {
+  kbTarget = null;
+  document.getElementById('vkb')?.classList.remove('visible');
+  document.body.classList.remove('kb-open');
 }
 
 // ─── EVENT LISTENERS ─────────────────────────────────────────────────────────
@@ -342,6 +430,27 @@ $('q').addEventListener('input', () => {
   clearTimeout(searchTimer);
   const q = $('q').value.trim();
   if (q.length >= 2) searchTimer = setTimeout(() => doSearch(q), 500);
+});
+
+$('q').addEventListener('focus', () => vkbShow($('q')));
+$('q').addEventListener('blur', () => {
+  // Delay so keyboard button clicks can fire before we hide
+  setTimeout(() => {
+    if (document.activeElement !== $('q') &&
+        document.activeElement !== $('singer-input')) {
+      vkbHide();
+    }
+  }, 80);
+});
+
+$('singer-input').addEventListener('focus', () => vkbShow($('singer-input')));
+$('singer-input').addEventListener('blur', () => {
+  setTimeout(() => {
+    if (document.activeElement !== $('singer-input') &&
+        kbTarget === $('singer-input')) {
+      vkbHide();
+    }
+  }, 80);
 });
 
 $('btn-toggle').addEventListener('click', () =>
@@ -365,6 +474,7 @@ $('singer-input').addEventListener('keydown', e => {
 });
 
 $('singer-dialog').addEventListener('close', async () => {
+  vkbHide();
   if ($('singer-dialog').returnValue === 'ok' && pendingSong) {
     await enqueue(pendingSong, $('singer-input').value.trim());
   }
