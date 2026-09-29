@@ -39,12 +39,13 @@ def make_qr_png(data: str, box_size: int = 10, border: int = 4) -> bytes:
 
 
 def make_idle_image(cfg) -> bytes:
-    """Ghép QR WiFi + QR App + text hướng dẫn thành ảnh 1920×1080 hiển thị trên TV."""
+    """Ghép QR WiFi + QR App + text hướng dẫn thành ảnh hiển thị trên TV."""
     try:
         from PIL import Image, ImageDraw, ImageFont
         import qrcode
 
-        W, H = 1920, 1080
+        W = getattr(getattr(cfg, "player", None), "screen_width", 1920)
+        H = getattr(getattr(cfg, "player", None), "screen_height", 1080)
         BG = (15, 17, 21)        # #0f1115
         TEXT = (242, 244, 248)   # #f2f4f8
         ACCENT = (255, 176, 32)  # #ffb020

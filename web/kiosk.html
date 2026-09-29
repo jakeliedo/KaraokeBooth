@@ -97,12 +97,13 @@
 <!-- Singer dialog -->
 <dialog id="singer-dialog">
   <form method="dialog">
+    <button type="button" class="dialog-close" onclick="document.getElementById('singer-dialog').close('cancel')">✕</button>
     <h2 id="singer-title">Đặt bài</h2>
     <label for="singer-input">Tên người hát</label>
     <input id="singer-input" type="text" maxlength="24" placeholder="Không bắt buộc">
     <menu>
-      <button value="cancel" class="btn-cancel">Huỷ</button>
-      <button id="singer-ok" value="ok" class="btn-ok">Đặt bài</button>
+      <button type="button" class="btn-cancel" onclick="document.getElementById('singer-dialog').close('cancel')">Huỷ</button>
+      <button value="ok" class="btn-ok">Đặt bài</button>
     </menu>
   </form>
 </dialog>

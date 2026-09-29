@@ -33,6 +33,9 @@ class PlayerConfig:
     volume: int = 100
     volume_max: int = 130
     video_pitch_range: int = 4
+    screen_width: int = 1920
+    screen_height: int = 1080
+    """Độ phân giải màn TV — dùng để render idle image đúng kích thước."""
     """Giới hạn ±4 nửa cung cho bài video. Pitch-shift một bản mix hoàn chỉnh bằng
     phase-vocoder luôn có artifact; quá ±4 là nghe rõ."""
 
