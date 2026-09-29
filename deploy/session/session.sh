@@ -40,5 +40,20 @@ fi
 openbox &
 unclutter -idle 0.5 -root &
 
-systemctl --user start karaoke-ui.service
+# Kiosk Chromium trên màn cảm ứng (TOUCH_OUT, luôn ở vị trí x=0)
+# --app= bỏ thanh địa chỉ; --kiosk fullscreen trên màn hiện tại của cửa sổ;
+# --window-position=0,0 đảm bảo bắt đầu trên màn trái (ELO), không phải TV.
+chromium \
+    --kiosk \
+    --app=http://localhost/kiosk.html \
+    --no-sandbox \
+    --no-first-run \
+    --disable-translate \
+    --disable-extensions \
+    --noerrdialogs \
+    --disable-session-crashed-bubble \
+    --disable-infobars \
+    --disable-features=TranslateUI \
+    --window-position=0,0 &
+
 wait
