@@ -31,10 +31,12 @@ class Session:
         self._mpv_retry: asyncio.Task | None = None
 
         # Ảnh hiển thị trên TV khi không có bài phát.
-        # Ghi vào /run/karaoke/ (tmpfs) để mpv đọc được qua đường dẫn file.
+        # Thử /run/karaoke/ (tmpfs trên máy thật); nếu không ghi được thì dùng data_dir.
         from pathlib import Path
         self._idle_image = Path("/run/karaoke/idle.png")
-        write_idle_image(cfg, self._idle_image)
+        if not write_idle_image(cfg, self._idle_image):
+            self._idle_image = cfg.data_dir / "idle.png"
+            write_idle_image(cfg, self._idle_image)
 
         self.local = LocalSource(conn)
         self.youtube = YouTubeSource(conn, cfg.cache_dir, cfg.youtube)
