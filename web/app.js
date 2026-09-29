@@ -147,6 +147,7 @@ function renderResults(results, note) {
     const li = document.createElement('li');
     li.className = 'item tappable';
     li.innerHTML = `
+      ${song.thumbnail ? `<img class="thumb" src="${song.thumbnail}" alt="" loading="lazy" onerror="this.style.display='none'">` : '<span class="thumb-ph"></span>'}
       <span class="body">
         <span class="title">${escapeHtml(song.title)}</span>
         <span class="meta">${escapeHtml(song.channel || song.artist || '')}
