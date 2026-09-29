@@ -43,6 +43,7 @@ class MpvClient:
         self._pending: dict[int, asyncio.Future] = {}
         self._req_id = 0
         self._reader_task: asyncio.Task | None = None
+        self._restart_task: asyncio.Task | None = None
         self._available = False
 
     @property
@@ -116,6 +117,10 @@ class MpvClient:
 
     async def stop(self) -> None:
         self._available = False
+        if self._restart_task and not self._restart_task.done():
+            self._restart_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._restart_task
         if self._reader_task:
             self._reader_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -166,7 +171,7 @@ class MpvClient:
             if not line:
                 log.warning("mpv dong ket noi IPC")
                 self._available = False
-                asyncio.create_task(self._restart())
+                self._restart_task = asyncio.create_task(self._restart())
                 return
             try:
                 msg = json.loads(line)

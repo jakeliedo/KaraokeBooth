@@ -16,8 +16,20 @@ xhost +local:karaoke
 # các lần cắm. Ánh xạ được lưu lúc lắp đặt tại /persist/config/displays.json.
 . /usr/lib/karaoke/detect-displays.sh   # xuất TOUCH_OUT, TV_OUT, TOUCH_DEV
 
-xrandr --output "$TOUCH_OUT" --mode 1920x1080 --pos 0x0    --primary
-xrandr --output "$TV_OUT"    --mode 1920x1080 --pos 1920x0
+if [ "$TOUCH_OUT" = "$TV_OUT" ]; then
+    # Chỉ một màn: TV chiếm toàn bộ, mpv dùng screen=0
+    xrandr --output "$TV_OUT" --auto --pos 0x0 --primary
+    KARAOKE_SCREEN=0
+else
+    # Hai màn: ELO (cảm ứng) ở x=0, TV ở x=1920 (right).
+    # mpv đánh số theo vị trí vật lý: 0=trái(ELO), 1=phải(TV).
+    xrandr --output "$TOUCH_OUT" --mode 1920x1080 --pos 0x0
+    xrandr --output "$TV_OUT"    --auto --pos 1920x0 --primary
+    KARAOKE_SCREEN=1
+fi
+
+# Ghi screen index vào config để karaoke-core dùng đúng màn
+sed -i "s/^screen = .*/screen = ${KARAOKE_SCREEN}/" /etc/karaoke/config.toml 2>/dev/null || true
 
 # BẮT BUỘC và phải chạy SAU mỗi lần xrandr. Nếu quên, vùng chạm trải trên toàn bộ
 # desktop ảo 3840x1080 và mọi cú chạm lệch đúng một nửa màn hình.
