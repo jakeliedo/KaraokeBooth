@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920">
+<title>KaraokeBooth — Kiosk</title>
+<link rel="stylesheet" href="kiosk.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── CỘT TRÁI: tìm bài ─────────────────────────────────── -->
+  <section class="search-col">
+    <div class="search-header">
+      <h1>Chọn bài</h1>
+      <span id="status" class="chip">Đang kết nối…</span>
+    </div>
+
+    <form id="search-form" autocomplete="off">
+      <input id="q" type="search" placeholder="Tên bài hoặc ca sĩ…"
+             autocomplete="off" enterkeyhint="search">
+      <button type="submit" class="btn-search">Tìm</button>
+    </form>
+
+    <p id="search-note" class="hint" hidden></p>
+    <ul id="results" class="song-list"></ul>
+  </section>
+
+  <!-- ── CỘT PHẢI: đang phát + hàng chờ ───────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Now playing -->
+    <div class="now-playing" id="now-playing">
+      <div class="np-art" id="np-art">
+        <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="40" cy="40" r="38" stroke="#333" stroke-width="2"/>
+          <circle cx="40" cy="40" r="14" fill="#222"/>
+          <path d="M34 31l18 9-18 9V31z" fill="#555"/>
+        </svg>
+      </div>
+      <div class="np-info">
+        <div class="np-title" id="np-title">Chưa có bài</div>
+        <div class="np-singer" id="np-singer"></div>
+        <div class="np-progress">
+          <div class="progress-bar" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <div class="progress-time">
+            <span id="np-pos">0:00</span>
+            <span id="np-dur">0:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Điều khiển phát -->
+    <div class="controls">
+      <button class="ctrl-btn" id="btn-replay" title="Phát lại từ đầu">⟳</button>
+      <button class="ctrl-btn primary" id="btn-toggle" title="Phát / Dừng">▶</button>
+      <button class="ctrl-btn" id="btn-next" title="Bài tiếp">⏭</button>
+
+      <div class="divider-v"></div>
+
+      <div class="knob-group">
+        <span class="knob-label">Âm lượng</span>
+        <div class="knob-row">
+          <button class="ctrl-sm" id="vol-dn">−</button>
+          <span class="knob-val" id="vol-val">100</span>
+          <button class="ctrl-sm" id="vol-up">+</button>
+        </div>
+      </div>
+
+      <div class="knob-group">
+        <span class="knob-label">Tông</span>
+        <div class="knob-row">
+          <button class="ctrl-sm" id="pitch-dn">−</button>
+          <span class="knob-val" id="pitch-val">0</span>
+          <button class="ctrl-sm" id="pitch-up">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hàng chờ -->
+    <div class="queue-section">
+      <div class="queue-header">
+        <span>Hàng chờ</span>
+        <span class="chip" id="queue-count"></span>
+      </div>
+      <ul id="queue-list" class="queue-list"></ul>
+      <p id="queue-empty" class="hint">Chưa có bài nào trong hàng chờ.</p>
+    </div>
+
+  </aside>
+</div>
+
+<!-- Singer dialog -->
+<dialog id="singer-dialog">
+  <form method="dialog">
+    <h2 id="singer-title">Đặt bài</h2>
+    <label for="singer-input">Tên người hát</label>
+    <input id="singer-input" type="text" maxlength="24" placeholder="Không bắt buộc">
+    <menu>
+      <button value="cancel" class="btn-cancel">Huỷ</button>
+      <button id="singer-ok" value="ok" class="btn-ok">Đặt bài</button>
+    </menu>
+  </form>
+</dialog>
+
+<script src="kiosk.js" type="module"></script>
+</body>
+</html>

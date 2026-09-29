@@ -21,6 +21,6 @@ fi
 # để máy vẫn dùng được thay vì không hiện gì.
 [ -z "$TV_OUT" ] && TV_OUT=$TOUCH_OUT
 
-TOUCH_DEV=$(xinput list --name-only 2>/dev/null | grep -i -m1 -E 'touch|elan|ilitek|egalax' || true)
+TOUCH_DEV=$(xinput list --name-only 2>/dev/null | grep -i -m1 -E 'touch|elan|ilitek|egalax|elo' || true)
 
 export TOUCH_OUT TV_OUT TOUCH_DEV
