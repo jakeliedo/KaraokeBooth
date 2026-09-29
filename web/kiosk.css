@@ -2,18 +2,28 @@
    Vùng chạm tối thiểu 60px, tương phản cao, không có scrollbar ngang. */
 
 :root {
-  --bg:        #0a0c10;
-  --surface:   #12161f;
-  --surface-2: #1a2030;
-  --surface-3: #222a3a;
-  --text:      #eef1f8;
-  --muted:     #8896b0;
-  --accent:    #ffb020;
-  --accent-dim:#7a5000;
-  --ok:        #4ade80;
-  --warn:      #fb7185;
+  --bg:        #000000;
+  --surface:   #0d0d0d;
+  --surface-2: #141414;
+  --surface-3: #1e1e1e;
+  --text:      #ffffff;
+  --muted:     #888888;
+  /* Neon palette */
+  --neon-cyan:   #00f5ff;
+  --neon-pink:   #ff2d78;
+  --neon-green:  #39ff14;
+  --neon-yellow: #ffee00;
+  --neon-purple: #bf5fff;
+  /* role mapping */
+  --accent:    var(--neon-cyan);
+  --ok:        var(--neon-green);
+  --warn:      var(--neon-pink);
   --radius:    12px;
-  --col-search: 780px;   /* chiều rộng cột tìm kiếm */
+  --col-search: 780px;
+  /* neon glow helper */
+  --glow-cyan:   0 0 8px #00f5ff, 0 0 20px #00f5ff55;
+  --glow-pink:   0 0 8px #ff2d78, 0 0 20px #ff2d7855;
+  --glow-green:  0 0 8px #39ff14, 0 0 20px #39ff1455;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,6 +74,9 @@ body {
 .search-header h1 {
   font-size: 22px;
   font-weight: 700;
+  color: var(--neon-cyan);
+  text-shadow: var(--glow-cyan);
+  letter-spacing: .04em;
 }
 
 #search-form {
@@ -91,16 +104,21 @@ body {
 .btn-search {
   height: 56px;
   padding: 0 24px;
-  background: var(--accent);
-  color: #000;
-  border: none;
+  background: transparent;
+  color: var(--neon-cyan);
+  border: 2px solid var(--neon-cyan);
   border-radius: var(--radius);
   font-size: 17px;
   font-weight: 700;
   cursor: pointer;
+  text-shadow: var(--glow-cyan);
+  box-shadow: var(--glow-cyan);
+  transition: background .15s;
 }
 
-.btn-search:active { opacity: .8; }
+.btn-search:active {
+  background: #00f5ff22;
+}
 
 .hint {
   color: var(--muted);
@@ -164,6 +182,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text);
 }
 
 .song-list .item .meta {
@@ -180,17 +199,21 @@ body {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--accent);
-  color: #000;
+  background: transparent;
+  color: var(--neon-green);
+  border: 2px solid var(--neon-green);
   font-size: 28px;
   font-weight: 700;
-  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
+  text-shadow: var(--glow-green);
+  box-shadow: var(--glow-green);
 }
+
+.song-list .item .add-btn:active { background: #39ff1422; }
 
 /* ══════════════════════════════════════════════════════ NOW PLAYING */
 
@@ -226,11 +249,14 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 8px #ffee0088;
 }
 
 .np-singer {
   font-size: 14px;
-  color: var(--accent);
+  color: var(--neon-pink);
+  text-shadow: var(--glow-pink);
   margin-top: 4px;
 }
 
@@ -246,7 +272,8 @@ body {
 
 .progress-fill {
   height: 100%;
-  background: var(--accent);
+  background: var(--neon-cyan);
+  box-shadow: var(--glow-cyan);
   border-radius: 3px;
   width: 0%;
   transition: width .2s linear;
@@ -287,8 +314,11 @@ body {
 }
 
 .ctrl-btn.primary {
-  background: var(--accent);
-  color: #000;
+  background: transparent;
+  color: var(--neon-cyan);
+  border: 2px solid var(--neon-cyan);
+  box-shadow: var(--glow-cyan);
+  text-shadow: var(--glow-cyan);
   width: 70px;
   height: 70px;
   font-size: 26px;
@@ -362,7 +392,8 @@ body {
   padding: 14px 24px 10px;
   font-size: 15px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--neon-purple);
+  text-shadow: 0 0 8px #bf5fff88;
   text-transform: uppercase;
   letter-spacing: .05em;
   flex-shrink: 0;
@@ -389,8 +420,9 @@ body {
 }
 
 .queue-list .qitem.now {
-  border: 1px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border: 1px solid var(--neon-cyan);
+  background: #00f5ff0a;
+  box-shadow: inset 0 0 12px #00f5ff18;
 }
 
 .qitem .qpos {
@@ -426,11 +458,13 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text);
 }
 
 .qitem .qsinger {
   font-size: 12px;
-  color: var(--accent);
+  color: var(--neon-pink);
+  text-shadow: 0 0 6px #ff2d7866;
 }
 
 .qitem .qdel {
@@ -526,11 +560,15 @@ dialog menu {
 .btn-ok {
   height: 52px;
   padding: 0 32px;
-  background: var(--accent);
-  color: #000;
-  border: none;
+  background: transparent;
+  color: var(--neon-green);
+  border: 2px solid var(--neon-green);
   border-radius: var(--radius);
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
+  text-shadow: var(--glow-green);
+  box-shadow: var(--glow-green);
 }
+
+.btn-ok:active { background: #39ff1422; }
