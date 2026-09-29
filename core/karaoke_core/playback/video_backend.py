@@ -54,6 +54,7 @@ class VideoBackend(PlaybackEngine):
             return
 
         await self._mpv.loadfile(media.url)
+        await self._mpv.set_property("pause", False)
         await self._apply_pitch()
         await self._mpv.set_property("speed", self._tempo)
         self._state = PlayerState.PLAYING
