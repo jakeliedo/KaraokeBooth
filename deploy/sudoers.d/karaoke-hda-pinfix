@@ -1,0 +1,4 @@
+# Cho phép user karaoke chạy ĐÚNG 1 lệnh hda-verb (không sudo chung) để tự áp
+# lại Pin Widget Control cho node 0x14 (ALC886, jack rear IO) mỗi khi
+# karaoke-core restart — xem CLAUDE.md gotcha #8 và deploy/fix_alsa.sh.
+karaoke ALL=(root) NOPASSWD: /usr/bin/hda-verb /dev/snd/hwC1D0 0x14 SET_PIN_WIDGET_CONTROL 0x40

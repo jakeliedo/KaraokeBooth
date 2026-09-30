@@ -222,22 +222,39 @@ body {
 
 .song-list .item .add-btn:active { background: #39ff1422; }
 
-/* ══════════════════════════════════════════════════════ NOW PLAYING */
+/* ══════════════════════════════════════════════════════ PLAYER CARD */
+/* Trái = điều khiển + tiến trình, phải = preview, dưới = tên bài full-width.
+   Nhường tối đa chiều cao cho hàng chờ bên dưới. */
 
-.now-playing {
+.player-card {
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid var(--surface-2);
+  background: var(--surface);
 }
 
-/* ── Preview video / thumbnail lớn ── */
+.np-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.np-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+/* ── Preview video / thumbnail — cột phải, cao bằng cột trái ── */
 .np-preview-wrap {
   position: relative;
-  width: 100%;
-  height: 300px;
+  width: 372px;
+  flex-shrink: 0;
   background: #000;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 #np-preview {
@@ -257,13 +274,20 @@ body {
 /* Ẩn placeholder khi preview đang hiển thị */
 #np-preview[src]:not([src=""]) ~ #np-placeholder { display: none; }
 
-.np-info {
-  padding: 12px 20px 14px;
+/* Cạnh dưới box: tên bài full-width — tên dài không bị bóp hẹp bởi cột trái/phải */
+.np-titlebar {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 20px 10px;
+  border-top: 1px solid var(--surface-2);
   min-width: 0;
 }
 
 .np-title {
-  font-size: 20px;
+  flex: 1;
+  min-width: 0;
+  font-size: 17px;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -273,13 +297,11 @@ body {
 }
 
 .np-singer {
-  font-size: 14px;
+  flex-shrink: 0;
+  font-size: 13px;
   color: var(--neon-pink);
   text-shadow: var(--glow-pink);
-  margin-top: 4px;
 }
-
-.np-progress { margin-top: 10px; }
 
 .progress-bar {
   width: 100%;
@@ -311,10 +333,8 @@ body {
 .controls {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 24px;
-  border-bottom: 1px solid var(--surface-2);
-  background: var(--surface);
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .ctrl-btn {
@@ -616,13 +636,19 @@ dialog menu {
 
 dialog { position: relative; }
 
-/* Push dialog to top when on-screen keyboard is open */
+/* Push dialog to top when on-screen keyboard is open.
+   KHÔNG dùng transform để căn giữa ngang: dialog giờ là cha DOM của #vkb (xem
+   vkbShow trong kiosk.js), và transform trên dialog sẽ tạo containing block
+   mới cho #vkb (position:fixed) — khiến "bottom:0" tính theo khung dialog
+   thay vì viewport thật, kéo bàn phím lên sai vị trí. Dùng left/right + margin
+   auto để căn giữa mà không đụng containing block. */
 .kb-open dialog[open] {
   position: fixed;
   top: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
 }
 
 /* ══════════════════════════════════════════════════════ TOAST */

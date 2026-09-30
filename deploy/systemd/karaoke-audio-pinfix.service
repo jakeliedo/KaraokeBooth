@@ -1,0 +1,28 @@
+[Unit]
+# ALC886 trên AEWIN MB-8390 báo "SKU not ready 0x00000100" trong dmesg — BIOS
+# không cung cấp đủ pin-config, driver snd-hda-intel không tự SET_PIN_WIDGET_CONTROL
+# cho node 0x14 (Line Out at Ext Rear, jack xanh rear IO). Hậu quả: ALSA/PipeWire
+# mixer báo "Front"/"lineout" on + 100% (đúng amp), nhưng Pin-ctls thật sự vẫn là
+# 0x00 (OUT chưa bật) -> không có tín hiệu ra jack dù mọi lớp phần mềm đều "xanh".
+#
+# Xác nhận bằng: cat /proc/asound/card1/codec#0 | grep -A18 "Node 0x14 \["
+# Node 0x1b (Headphone, jack mặt trước) không bị lỗi này — driver tự bật đúng
+# Pin-ctls 0xc0 (OUT HP VREF_HIZ) cho node đó.
+#
+# Fix: hda-verb ghi thẳng verb SET_PIN_WIDGET_CONTROL=0x40 (OUT) vào node 0x14.
+# Đây là thanh ghi runtime của codec, KHÔNG survive reboot -> phải chạy lại mỗi
+# lần boot bằng service này. Cần quyền root (device /dev/snd/hwC1D0 dùng ACL
+# logind theo session, karaoke user không mở được nếu gọi ngoài session thật).
+Description=ALC886 pin widget fix - bat Pin-ctls OUT cho jack rear IO (NID 0x14)
+DefaultDependencies=no
+After=systemd-udevd.service
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/bin/sleep 1
+ExecStart=/usr/bin/hda-verb /dev/snd/hwC1D0 0x14 SET_PIN_WIDGET_CONTROL 0x40
+
+[Install]
+WantedBy=sysinit.target

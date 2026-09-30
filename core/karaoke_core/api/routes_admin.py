@@ -16,18 +16,25 @@ import subprocess
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
 
-from ..qr_util import make_idle_image, make_qr_png
+from ..qr_util import detect_app_ip, make_idle_image, make_qr_png
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/admin")
 
-# Cache ảnh trong process — hình chỉ thay đổi khi cấu hình thay đổi.
+# Cache ảnh trong process, khoá theo IP đã dùng để render lần gần nhất — hình
+# chỉ render lại khi cấu hình đổi (invalidate_qr_cache) HOẶC khi IP thật của
+# máy đổi (DHCP cấp IP mới sau khi boot, hoặc renew lease giữa lúc đang chạy).
+# Nhờ vậy không cần "engine" riêng chờ DHCP lúc boot: request đầu tiên có thể
+# tới trước khi DHCP xong (fallback ap_address tĩnh), nhưng request sau đó sẽ
+# tự phát hiện IP thật và render lại — không cần restart service.
 _qr_cache: dict[str, bytes] = {}
+_qr_cache_key: dict[str, str] = {}
 
 
 def invalidate_qr_cache() -> None:
     """Gọi khi cấu hình WiFi thay đổi để QR được sinh lại."""
     _qr_cache.clear()
+    _qr_cache_key.clear()
 
 
 @router.get("/qr/wifi.png", responses={200: {"content": {"image/png": {}}}})
@@ -46,11 +53,12 @@ async def qr_wifi(request: Request):
 
 @router.get("/qr/app.png", responses={200: {"content": {"image/png": {}}}})
 async def qr_app(request: Request):
-    """QR URL app điện thoại."""
+    """QR URL app điện thoại — tự phát hiện IP thật (DHCP), xem detect_app_ip."""
     cfg = request.app.state.cfg
-    if "app" not in _qr_cache:
-        url = f"http://{cfg.network.ap_address}/"
-        _qr_cache["app"] = make_qr_png(url)
+    ip = detect_app_ip(cfg.network.ap_address)
+    if _qr_cache_key.get("app") != ip:
+        _qr_cache["app"] = make_qr_png(f"http://{ip}/")
+        _qr_cache_key["app"] = ip
     return Response(content=_qr_cache["app"], media_type="image/png")
 
 
@@ -58,8 +66,10 @@ async def qr_app(request: Request):
 async def qr_idle(request: Request):
     """Ảnh kết hợp WiFi + App QR hiển thị trên TV khi rảnh."""
     cfg = request.app.state.cfg
-    if "idle" not in _qr_cache:
+    ip = detect_app_ip(cfg.network.ap_address)
+    if _qr_cache_key.get("idle") != ip:
         _qr_cache["idle"] = make_idle_image(cfg)
+        _qr_cache_key["idle"] = ip
     return Response(content=_qr_cache["idle"], media_type="image/png")
 
 

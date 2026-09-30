@@ -33,7 +33,7 @@ apt-get install -y --no-install-recommends \
     xserver-xorg-core xserver-xorg-input-libinput xinit openbox lightdm \
     unclutter xinput x11-xserver-utils \
     pipewire pipewire-audio pipewire-alsa pipewire-pulse pipewire-jack \
-    wireplumber pipewire-bin libspa-0.2-modules alsa-utils \
+    wireplumber pipewire-bin libspa-0.2-modules alsa-utils alsa-tools \
     mpv ffmpeg fonts-noto-core \
     python3 python3-venv python3-systemd sqlite3 \
     nginx-light chrony jq curl git rsync bmap-tools \
@@ -93,8 +93,21 @@ cp "$REPO/deploy/pipewire/dsp.conf" /etc/karaoke/dsp.conf
 install -m755 "$REPO/deploy/fix_alsa.sh" /etc/karaoke/fix_alsa.sh
 
 install -d /etc/pipewire/pipewire.conf.d /etc/wireplumber/wireplumber.conf.d
-cp "$REPO/deploy/pipewire/10-karaoke-clock.conf" /etc/pipewire/pipewire.conf.d/
-cp "$REPO/deploy/pipewire/51-karaoke-usb.conf"   /etc/wireplumber/wireplumber.conf.d/
+cp "$REPO/deploy/pipewire/10-karaoke-clock.conf"  /etc/pipewire/pipewire.conf.d/
+cp "$REPO/deploy/pipewire/51-karaoke-usb.conf"    /etc/wireplumber/wireplumber.conf.d/
+cp "$REPO/deploy/pipewire/50-volume-default.conf" /etc/wireplumber/wireplumber.conf.d/
+
+# Fix pin widget ALC886 (xem comment trong file service) — cần root, chạy 1 lần
+# lúc boot độc lập với user session karaoke. fix_alsa.sh cũng tự áp lại mỗi
+# lần karaoke-core restart (thanh ghi này reset khi mpv mở lại device) — cần
+# sudoers rule hẹp vì karaoke user không có sudo chung.
+cp "$REPO/deploy/systemd/karaoke-audio-pinfix.service" /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now karaoke-audio-pinfix.service || true
+
+install -d /etc/sudoers.d
+install -m440 -o root -g root "$REPO/deploy/sudoers.d/karaoke-hda-pinfix" /etc/sudoers.d/karaoke-hda-pinfix
+visudo -c -f /etc/sudoers.d/karaoke-hda-pinfix
 
 install -d /etc/X11/xorg.conf.d
 cp "$REPO"/deploy/xorg/*.conf /etc/X11/xorg.conf.d/

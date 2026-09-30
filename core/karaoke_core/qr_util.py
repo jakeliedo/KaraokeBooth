@@ -7,9 +7,39 @@ from __future__ import annotations
 
 import io
 import logging
+import socket
 from pathlib import Path
 
 log = logging.getLogger(__name__)
+
+# --------------------------------------------------------------------------- IP thật
+
+
+def detect_app_ip(fallback: str) -> str:
+    """IP thật của máy trên mạng khách — ưu tiên IP DHCP nếu có route ra ngoài.
+
+    Chế độ `--no-ap` (nối WiFi/LAN có sẵn): IP do DHCP cấp, có thể đổi sau mỗi
+    lần khởi động — không được hardcode trong config.toml.
+    Chế độ AP tự phát (hostapd, `IPForward=no`): không có route nào cả (mạng
+    khách bị cô lập, không ra Internet) — socket.connect() ném lỗi ngay, khi đó
+    dùng lại `fallback` (network.ap_address tĩnh, ví dụ 192.168.50.1).
+
+    connect() ở đây KHÔNG gửi packet nào — chỉ nhờ kernel chọn route/interface
+    phù hợp rồi đọc lại IP nguồn qua getsockname().
+    """
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+        finally:
+            s.close()
+        if ip and not ip.startswith("127."):
+            return ip
+    except OSError:
+        pass
+    return fallback
+
 
 # --------------------------------------------------------------------------- QR đơn
 
@@ -58,7 +88,7 @@ def make_idle_image(cfg) -> bytes:
         auth = "WPA" if psk else "nopass"
         ssid = getattr(ap, "ap_ssid", "KaraokeBox")
         wifi_str = f"WIFI:S:{ssid};T:{auth};P:{psk};;"
-        app_url = f"http://{ap.ap_address}/"
+        app_url = f"http://{detect_app_ip(ap.ap_address)}/"
 
         def _qr_img(data: str, size: int = 420) -> Image.Image:
             qr = qrcode.QRCode(
@@ -113,7 +143,8 @@ def make_idle_image(cfg) -> bytes:
 
     except Exception as exc:
         log.warning("khong tao duoc idle image: %s — fallback QR app", exc)
-        return make_qr_png(f"http://{cfg.network.ap_address}/", box_size=20, border=6)
+        ip = detect_app_ip(cfg.network.ap_address)
+        return make_qr_png(f"http://{ip}/", box_size=20, border=6)
 
 
 def write_idle_image(cfg, dest: Path) -> bool:

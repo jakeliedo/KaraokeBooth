@@ -107,6 +107,13 @@ function applyEvent(event, data) {
     return;
   }
 
+  // server error (ví dụ bài không tải được)
+  if (event === 'error') {
+    const msg = data.message || data.code || 'Lỗi không xác định';
+    showToast(`Lỗi: ${msg}`, true);
+    return;
+  }
+
   // queue_changed: data = { current: {...}|null, items: [...] }
   if (event === 'queue_changed') {
     state.queue = data.items || [];
@@ -328,8 +335,8 @@ async function enqueue(song, singer) {
       client_id: 'kiosk',
     });
     showToast(`Đã đặt: ${song.title}`);
-  } catch {
-    showToast('Đặt bài thất bại — thử lại', true);
+  } catch (err) {
+    showToast(`Đặt bài thất bại: ${err.message || 'thử lại'}`, true);
   }
 }
 
@@ -428,13 +435,24 @@ function vkbKey(key) {
 
 function vkbShow(el) {
   kbTarget = el;
-  (document.getElementById('vkb') || _buildVkb()).classList.add('visible');
+  const vkb = document.getElementById('vkb') || _buildVkb();
   document.body.classList.add('kb-open');
+  // showModal() làm mọi thứ NGOÀI dialog thành inert (không nhận click/hover) —
+  // kể cả popover top-layer khác. Nếu input đang nằm trong <dialog open>, gắn
+  // VKB làm con của chính dialog đó để nó luôn thuộc vùng tương tác được.
+  const dialog = el.closest('dialog[open]');
+  const parent = dialog || document.body;
+  if (vkb.parentElement !== parent) parent.appendChild(vkb);
+  vkb.classList.add('visible');
 }
 
 function vkbHide() {
   kbTarget = null;
-  document.getElementById('vkb')?.classList.remove('visible');
+  const vkb = document.getElementById('vkb');
+  if (vkb) {
+    vkb.classList.remove('visible');
+    if (vkb.parentElement !== document.body) document.body.appendChild(vkb);
+  }
   document.body.classList.remove('kb-open');
 }
 
