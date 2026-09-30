@@ -147,6 +147,12 @@ class Session:
         chứ không đệ quy để hàng chờ dài toàn bài hỏng cũng không làm tràn stack.
         """
         if self._advancing:
+            # Bài trước đang resolve/tải (có thể mất nhiều giây nếu YouTube
+            # chậm hoặc yt-dlp phải retry) — không được im lặng bỏ qua lệnh
+            # Next, không thì UI trông như treo. Dùng lại kênh 'error' đã có
+            # sẵn toast ở client (kiosk.js applyEvent), không cần thêm gì bên đó.
+            self._bus.emit("error", {"code": "BUSY",
+                                     "message": "Đang xử lý bài trước, vui lòng đợi"})
             return False
         self._advancing = True
         try:

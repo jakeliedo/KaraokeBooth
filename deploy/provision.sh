@@ -38,7 +38,8 @@ apt-get install -y --no-install-recommends \
     python3 python3-venv python3-systemd sqlite3 \
     nginx-light chrony jq curl git rsync bmap-tools \
     pulseaudio-utils \
-    mesa-va-drivers mesa-vdpau-drivers
+    mesa-va-drivers mesa-vdpau-drivers \
+    plymouth plymouth-themes accountsservice
 
 # Firmware tùy chọn — không phải distro nào cũng có, bỏ qua nếu thiếu
 apt-get install -y --no-install-recommends firmware-misc-nonfree \
@@ -111,6 +112,25 @@ visudo -c -f /etc/sudoers.d/karaoke-hda-pinfix
 
 install -d /etc/X11/xorg.conf.d
 cp "$REPO"/deploy/xorg/*.conf /etc/X11/xorg.conf.d/
+
+# ---------------------------------------------------------------- boot splash
+log "Cài Plymouth splash (thay màn boot text Debian)"
+install -d /usr/share/plymouth/themes/karaoke
+cp "$REPO"/deploy/plymouth/karaoke/* /usr/share/plymouth/themes/karaoke/
+plymouth-set-default-theme -R karaoke
+sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
+# BẮT BUỘC: không có GFXPAYLOAD=keep, GRUB chuyển kernel về text-mode khi
+# handoff -> nhấp nháy màn chữ trước khi Plymouth vào graphics mode.
+grep -q '^GRUB_GFXPAYLOAD_LINUX=' /etc/default/grub || echo 'GRUB_GFXPAYLOAD_LINUX=keep' >> /etc/default/grub
+grep -q '^GRUB_GFXMODE=' /etc/default/grub || echo 'GRUB_GFXMODE=1024x768x32' >> /etc/default/grub
+update-grub
+
+# Nền greeter LightDM mặc định là login-background.svg (xám-xanh của Debian) —
+# đổi thành đen đặc để khớp Plymouth, tránh nháy xám giữa lúc Plymouth tắt
+# (LightDM giành DRM master) và lúc Chromium kịp vẽ. user-background=false vì
+# mặc định true có thể ghi đè background bằng ảnh riêng của user nếu có.
+sed -i 's/^#background=/background=#000000/;s/^#user-background=/user-background=false/' \
+    /etc/lightdm/lightdm-gtk-greeter.conf
 
 install -m755 "$REPO"/deploy/session/*.sh /usr/lib/karaoke/
 install -m644 "$REPO/deploy/session/karaoke.desktop" /usr/share/xsessions/

@@ -29,6 +29,13 @@ export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1001/bus
 sleep 4
 
 sudo -n /usr/bin/hda-verb /dev/snd/hwC1D0 0x14 SET_PIN_WIDGET_CONTROL 0x40 2>/dev/null || true
+
+# Belt-and-suspenders: Auto-Mute Mode phải Disabled (đã persist vào asound.state
+# bằng `alsactl store`, nhưng nếu ai đó cài lại/asound.state hỏng thì vẫn cần
+# dòng này — không thì driver tự mute lại Front theo jack-sense sai của node
+# Headphone, xem CLAUDE.md gotcha #9).
+/usr/bin/amixer -c 1 sset 'Auto-Mute Mode' Disabled 2>/dev/null || true
+
 pactl set-sink-port "$SINK" analog-output-lineout 2>/dev/null || true
 
 # Set PipeWire sink volume=1.0 + unmute (belt-and-suspenders, xem comment trên)

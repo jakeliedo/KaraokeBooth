@@ -9,6 +9,10 @@ set -eu
 xset s off -dpms
 xset s noblank
 
+# Nền đen ngay từ frame đầu tiên của X — tránh nháy xám giữa lúc Plymouth tắt
+# (LightDM giành DRM master) và lúc Chromium kịp vẽ. Chạy càng sớm càng tốt.
+xsetroot -solid black 2>/dev/null || true
+
 # Cho phép karaoke user (chạy service) kết nối X display này
 xhost +local:karaoke
 
@@ -42,6 +46,14 @@ if [ -n "${TOUCH_DEV:-}" ]; then
         [ -n "$dev_id" ] && xinput map-to-output "$dev_id" "$TOUCH_OUT" || true
     done
 fi
+
+# karaoke-core (chứa mpv) là systemd --user service riêng, khởi động không
+# đồng bộ với script này — có thể mpv đã tạo cửa sổ fullscreen (chụp geometry
+# Xinerama) TRƯỚC khi các lệnh xrandr phía trên chạy xong. Hậu quả: mpv giữ
+# kích thước màn CŨ, video bị phóng to sai tỉ lệ và mất phần trên/dưới. Restart
+# ở đây để mpv luôn tạo lại cửa sổ SAU khi xrandr đã set xong, geometry chắc
+# chắn đúng mỗi lần boot.
+systemctl --user restart karaoke-core 2>/dev/null || true
 
 openbox &
 unclutter -idle 0.5 -root &

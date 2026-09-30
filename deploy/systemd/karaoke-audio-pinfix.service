@@ -13,6 +13,10 @@
 # Đây là thanh ghi runtime của codec, KHÔNG survive reboot -> phải chạy lại mỗi
 # lần boot bằng service này. Cần quyền root (device /dev/snd/hwC1D0 dùng ACL
 # logind theo session, karaoke user không mở được nếu gọi ngoài session thật).
+#
+# ExecStart poll chờ /dev/snd/hwC1D0 xuất hiện thay vì sleep cố định: sleep 1
+# từng FAIL thật ("open: No such file or directory") vì udev chưa kịp tạo node
+# ở boot đó — sleep là race, không phải fix. Poll tối đa 10s (20 x 0.5s).
 Description=ALC886 pin widget fix - bat Pin-ctls OUT cho jack rear IO (NID 0x14)
 DefaultDependencies=no
 After=systemd-udevd.service
@@ -21,8 +25,7 @@ Before=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStartPre=/bin/sleep 1
-ExecStart=/usr/bin/hda-verb /dev/snd/hwC1D0 0x14 SET_PIN_WIDGET_CONTROL 0x40
+ExecStart=/bin/sh -c 'for i in $(seq 1 20); do [ -e /dev/snd/hwC1D0 ] && break; sleep 0.5; done; exec /usr/bin/hda-verb /dev/snd/hwC1D0 0x14 SET_PIN_WIDGET_CONTROL 0x40'
 
 [Install]
 WantedBy=sysinit.target

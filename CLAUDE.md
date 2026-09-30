@@ -82,6 +82,10 @@ client.exec_command('echo bo | sudo -S cp /tmp/file.py /opt/karaoke/path/to/file
 - [x] Service restart nhanh ~8s (fix `_restart_task` cancellation)
 - [x] Video không lag (`video-sync=audio` + `scale=bilinear`)
 - [x] session.sh detect single/dual monitor tự động
+- [x] Video đúng tỉ lệ, không mất trên/dưới — xem gotcha #13 (race session.sh↔karaoke-core)
+- [x] Plymouth boot splash (theme `karaoke`, nền đen + spinner) thay màn boot text Debian —
+      `deploy/plymouth/karaoke/`, cài qua `provision.sh`. Cần `GRUB_GFXPAYLOAD_LINUX=keep`
+      (xem gotcha #15) không thì vẫn thấy màn chữ trước khi vào splash.
 
 **Còn lại trong Giai đoạn 1:**
 - [ ] **Chromium kiosk trên ELO** — mở kiosk.html fullscreen trên màn cảm ứng (DP-3)
@@ -212,6 +216,19 @@ Kiểm tra: `sudo -u karaoke XDG_RUNTIME_DIR=/run/user/1001 systemctl --user sta
    unsolicited event của node Headphone (0x1b) — hoàn toàn độc lập với WirePlumber/hda-verb,
    xảy ra ở tầng driver/codec. Không cần trên máy cố định chỉ có 1 kết nối vật lý duy nhất
    → tắt hẳn: `amixer -c 1 sset 'Auto-Mute Mode' Disabled`.
+   **QUAN TRỌNG**: lệnh `amixer sset` chỉ set RUNTIME, KHÔNG tự persist qua reboot — phải
+   `sudo alsactl store` ngay sau đó để ghi vào `/var/lib/alsa/asound.state` (file mà
+   `alsa-restore`/`alsa-state` đọc lúc boot). Quên bước này là nguyên nhân y hệt lỗi tái phát
+   sau khi reset máy — kiểm tra bằng `grep -A5 "Auto-Mute Mode" /var/lib/alsa/asound.state`
+   phải thấy `value Disabled`. `fix_alsa.sh` cũng tự set lại mỗi lần start (belt-and-
+   suspenders, phòng khi asound.state bị ghi đè/cài lại từ đầu).
+
+   Jack-sense trên board này **không đáng tin cậy** cho mục đích khác nữa: test
+   `hda-verb /dev/snd/hwC1D0 <nid> GET_PIN_SENSE 0` — cả node 0x14 (đang cắm thật) lẫn
+   0x1b (chắc chắn không cắm gì) đều trả `0x80000000` ("có cắm"). Đừng dựa vào jack-sense
+   để tự động chọn ngõ ra (analog vs HDMI/DP) — không thể phân biệt cắm/không cắm trên
+   board này. Muốn đổi ngõ ra phải làm nút toggle thủ công (xem memory
+   `feature_monitor_audio_toggle` — tính năng đang chờ làm).
 
 10. **WirePlumber tự suspend + mute sink khi idle** (không có stream active) — đây là hành
     vi tiết kiệm điện BÌNH THƯỜNG của WP, dễ nhầm là "mất tiếng" khi kiểm tra lúc mpv đang
@@ -228,3 +245,54 @@ Kiểm tra: `sudo -u karaoke XDG_RUNTIME_DIR=/run/user/1001 systemctl --user sta
 11. **Thứ tự lệnh trong fix_alsa.sh quan trọng**: đổi port (`pactl set-sink-port`) PHẢI
     chạy TRƯỚC `wpctl set-mute`/`set-volume`. Làm ngược lại, WirePlumber activate route mới
     sẽ reset lại mute state, xoá luôn unmute vừa gọi trước đó.
+
+12. **`karaoke-audio-pinfix.service` từng FAIL lúc boot** (`hda-verb: open: No such file or
+    directory`) vì `/dev/snd/hwC1D0` chưa kịp được udev tạo — `sleep 1` cố định là race, không
+    phải fix (số giây cần đợi phụ thuộc tốc độ boot, không cố định). Đã sửa thành poll loop
+    (`for i in $(seq 1 20); do [ -e /dev/snd/hwC1D0 ] && break; sleep 0.5; done`) trong
+    `ExecStart`. Bài học chung: bất kỳ service nào chờ 1 device file cụ thể lúc boot, đừng
+    dùng `sleep` cố định — poll cho tới khi file tồn tại (có timeout), hoặc dùng
+    `dev-*.device` unit của systemd nếu tên ổn định.
+
+13. **Video bị phóng to sai tỉ lệ, mất phần trên/dưới** — do RACE giữa `session.sh` (chạy
+    `xrandr --output $TV_OUT --auto` để set mode màn TV) và `karaoke-core.service` (systemd
+    --user riêng, chứa mpv). Không có ràng buộc thứ tự giữa 2 thứ này — nếu mpv tạo cửa sổ
+    fullscreen (chụp geometry Xinerama) TRƯỚC khi xrandr chạy xong, mpv giữ kích thước màn
+    CŨ/preferred-EDID (ví dụ 2560×1440) thay vì kích thước ĐANG active thật (2560×1080) →
+    video được scale đúng tỉ lệ cho canvas 1440px cao rồi bị cắt bởi cửa sổ X thật chỉ cao
+    1080px. Chẩn đoán: `xdotool search --name mpv getwindowgeometry` so với
+    `xrandr --listmonitors` — nếu kích thước cửa sổ mpv KHÁC kích thước monitor thật dù vị
+    trí (x,y) đúng, chính là lỗi này. **Fix**: `session.sh` tự `systemctl --user restart
+    karaoke-core` NGAY SAU khi xrandr set xong (trước khi launch Chromium) — đảm bảo mpv luôn
+    tạo lại cửa sổ SAU khi geometry đã chốt, mỗi lần boot.
+
+14. **Nút "Next" bấm lần đầu không có tác dụng** — `Session.play_next()` có guard
+    `self._advancing` để tránh gọi chồng (session.py). Nếu bài trước đang resolve/tải (YouTube
+    chậm hoặc yt-dlp phải retry, có thể mất chục giây), bấm Next lúc đó bị **âm thầm bỏ qua**,
+    không báo gì — trông như UI treo. Đã sửa: emit `bus.emit("error", {"code":"BUSY",...})`
+    khi bị chặn, tái dùng kênh 'error' đã có sẵn toast ở kiosk.js, không cần sửa client.
+    Phân biệt với case "hàng chờ rỗng" (cũng trả về `False` nhưng KHÔNG nên báo lỗi — bấm
+    Next khi không còn gì để phát là hành vi đúng, im lặng là hợp lý).
+
+15. **Plymouth splash vẫn hiện màn chữ ("DOS") trước khi vào graphics** — `/etc/default/grub`
+    mặc định KHÔNG có `GRUB_GFXPAYLOAD_LINUX` (dòng bị comment sẵn `#GRUB_GFXMODE=640x480`
+    cũng không đủ). Thiếu `GRUB_GFXPAYLOAD_LINUX=keep`, GRUB tự chuyển kernel về TEXT MODE lúc
+    handoff dù chính GRUB đang chạy đồ hoạ — kernel boot ở text mode một lúc (nhìn như DOS)
+    trước khi driver DRM (radeon) chuyển sang KMS và Plymouth mới vẽ được. Fix: thêm cả
+    `GRUB_GFXPAYLOAD_LINUX=keep` và `GRUB_GFXMODE=1024x768x32` vào `/etc/default/grub`, chạy
+    lại `update-grub`. Xác nhận bằng `cat /proc/cmdline` (phải có `splash`) — nhưng cmdline
+    đúng KHÔNG có nghĩa graphics mode đúng, phải kiểm tra riêng GFXPAYLOAD.
+
+16. **"Màn xám" giữa Plymouth và Chromium** (khác gotcha #15 — đây là SAU khi Plymouth đã vào
+    graphics đúng, không phải màn chữ). Timeline thật (`journalctl -b -o short-precise | grep
+    -iE "plymouth|lightdm"`): Plymouth chạy ~2.5s rồi bị tắt NGAY khi `lightdm.service` start
+    (Xorg của LightDM giành DRM master — không tránh được, đây là giới hạn phần cứng/driver:
+    chỉ 1 process giữ DRM master tại 1 thời điểm). Sau đó LightDM mất thêm ~2s nữa (lỗi lặp lại
+    `org.freedesktop.Accounts ServiceUnknown` — thiếu package `accountsservice`) trước khi
+    autologin xong. Trong khoảng gián đoạn đó, cái hiện ra là **`login-background.svg`** —
+    ảnh nền xám-xanh mặc định của Debian trong `lightdm-gtk-greeter`, dù dùng autologin không
+    hiện form đăng nhập. Fix (không loại bỏ hoàn toàn được gap, chỉ làm nó "đen" thay vì "xám"
+    để gần như vô hình cạnh Plymouth): (1) cài `accountsservice` giảm độ trễ; (2)
+    `/etc/lightdm/lightdm-gtk-greeter.conf`: `background=#000000` + `user-background=false`
+    (mặc định true có thể ghi đè bằng ảnh riêng của user); (3) `xsetroot -solid black` ngay
+    dòng đầu `session.sh`, phòng khi root window X mặc định cũng xám trước khi Chromium vẽ.
