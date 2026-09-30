@@ -308,8 +308,10 @@ function openSingerDialog(song) {
   $('singer-title').textContent = song.title;
   $('singer-input').value = '';
   $('singer-dialog').showModal();
-  // requestAnimationFrame đảm bảo dialog đã render trước khi focus
-  requestAnimationFrame(() => $('singer-input').focus());
+  requestAnimationFrame(() => {
+    $('singer-input').focus();
+    vkbShow($('singer-input'));
+  });
 }
 
 async function enqueue(song, singer) {
