@@ -97,11 +97,25 @@ function applyEvent(event, data) {
 
   if (event === 'snapshot') {
     state.player = data.player || {};
-    state.queue = data.queue || [];
-    state.now_playing = data.now_playing ?? null;
+    // data.queue = { current: {...}|null, items: [...] }
+    const q = data.queue || {};
+    state.queue = Array.isArray(q) ? q : (q.items || []);
+    state.now_playing = Array.isArray(q) ? null : (q.current ?? null);
     syncLocalState();
     renderNowPlaying();
     renderQueue();
+    return;
+  }
+
+  // queue_changed: data = { current: {...}|null, items: [...] }
+  if (event === 'queue_changed') {
+    state.queue = data.items || [];
+    state.now_playing = data.current ?? null;
+    if (state.now_playing?.song && !state.player.song) {
+      state.player.song = state.now_playing.song;
+    }
+    renderQueue();
+    renderNowPlaying();
     return;
   }
 
@@ -109,18 +123,6 @@ function applyEvent(event, data) {
   if (data.state !== undefined) {
     state.player = { ...state.player, ...data };
     syncLocalState();
-    renderNowPlaying();
-  }
-
-  // queue events
-  if (data.queue !== undefined) {
-    state.queue = data.queue;
-    state.now_playing = data.now_playing ?? null;
-    // cập nhật song trong player từ now_playing nếu chưa có
-    if (state.now_playing && !state.player.song) {
-      state.player.song = state.now_playing.song;
-    }
-    renderQueue();
     renderNowPlaying();
   }
 
@@ -349,10 +351,10 @@ async function adjustPitch(delta) {
 // ─── VIRTUAL KEYBOARD ────────────────────────────────────────────────────────
 
 const VKB_ROWS = [
-  ['1','2','3','4','5','6','7','8','9','0','⌫'],
-  ['Q','W','E','R','T','Y','U','I','O','P'],
+  ['1','2','3','4','5','6','7','8','9','0','✕'],
+  ['Q','W','E','R','T','Y','U','I','O','P','⌫'],
   ['A','S','D','F','G','H','J','K','L'],
-  ['Z','X','C','V','B','N','M',' ','↵','✕'],
+  ['Z','X','C','V','B','N','M',' ','↵'],
 ];
 
 let kbTarget = null;

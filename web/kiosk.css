@@ -666,12 +666,13 @@ dialog { position: relative; }
   bottom: 0;
   left: 0;
   width: 1920px;
-  background: #060606;
+  background: #0a0a0f;
   border-top: 2px solid var(--surface-3);
   padding: 10px 24px 14px;
   display: none;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 7px;
   z-index: 10000;
   box-shadow: 0 -12px 48px rgba(0,0,0,.95);
 }
@@ -681,13 +682,14 @@ dialog { position: relative; }
 .vkb-row {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
 }
 
+/* Base key: 155×76px — mọi phím chữ/số đều cùng kích thước */
 .vkb-key {
-  height: 70px;
-  min-width: 78px;
-  padding: 0 10px;
+  flex: 0 0 155px;
+  height: 76px;
+  padding: 0;
   background: var(--surface-2);
   color: var(--text);
   border: 1px solid var(--surface-3);
@@ -700,43 +702,32 @@ dialog { position: relative; }
   justify-content: center;
   user-select: none;
   touch-action: manipulation;
-  transition: background .07s;
-  letter-spacing: .02em;
+  transition: background .07s, transform .07s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.vkb-key:active { background: var(--surface-3); }
+.vkb-key:active { background: var(--surface-3); transform: scale(0.94); }
 
-.vkb-bs {
-  color: var(--neon-pink);
-  border-color: var(--neon-pink);
-  min-width: 110px;
-  font-size: 26px;
-}
+/* ⌫  backspace = 1.5× + 1 gap = 155×1.5 + 7 = 239px */
+.vkb-bs { flex: 0 0 239px; color: var(--neon-pink); border-color: var(--neon-pink); font-size: 24px; }
 .vkb-bs:active { background: #ff2d7818; }
 
-.vkb-space {
-  min-width: 380px;
-  font-size: 15px;
-  color: var(--muted);
-  border-color: var(--surface-3);
-}
+/* dấu cách = 3× + 2 gaps = 155×3 + 14 = 479px */
+.vkb-space { flex: 0 0 479px; font-size: 14px; color: var(--muted); letter-spacing: 3px; }
 
+/* ↵  enter = 1.5× (same as backspace) */
 .vkb-enter {
+  flex: 0 0 239px;
   background: transparent;
   color: var(--neon-green);
   border-color: var(--neon-green);
+  font-size: 18px;
+  font-weight: 700;
   text-shadow: var(--glow-green);
-  box-shadow: var(--glow-green);
-  min-width: 110px;
-  font-size: 26px;
+  box-shadow: 0 0 8px #39ff1433;
 }
 .vkb-enter:active { background: #39ff1418; }
 
-.vkb-close {
-  background: transparent;
-  color: var(--muted);
-  border-color: var(--surface-3);
-  font-size: 22px;
-  min-width: 78px;
-}
-.vkb-close:active { background: var(--surface-3); }
+/* ✕  close = 1× (normal width), đỏ để dễ nhận biết */
+.vkb-close { color: var(--warn); border-color: var(--warn); font-size: 20px; }
+.vkb-close:active { background: #ff2d7818; }
